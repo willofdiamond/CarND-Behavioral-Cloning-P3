@@ -14,9 +14,9 @@ print("hi")
 
     
 def generateData(file_directory,batch_size,lines):
-    images=[]
-    steering=[]
-    for batch_itr in range(int(len(lines)/batch_size)):
+    for batch_itr in range(1,int(len(lines)/batch_size)):
+        image_data=[]
+        steering_data=[]
         if(batch_itr!=int(len(lines)/batch_size)-1):
             cur_itr_start = batch_itr*batch_size
             cur_itr_end = cur_itr_start+batch_size
@@ -24,15 +24,17 @@ def generateData(file_directory,batch_size,lines):
             cur_itr_start = batch_itr*batch_size
             cur_itr_end = len(lines)
         for itr in range(cur_itr_start,cur_itr_end):
-            
-            yield lines[itr][0]
+            image = cv2.imread(file_directory+lines[itr][0])
+            steering = lines[itr][3]
+            yield image
             
         
         
         
         
 for i in generateData(file_directory,1,lines):
-    print(i)
+    cv2.imshow("hi",i)
+    cv2.waitKey()
     
     
     
