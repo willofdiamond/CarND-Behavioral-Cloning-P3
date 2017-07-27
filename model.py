@@ -42,15 +42,37 @@ def generateData(file_directory,train_lines,batch_size =1):
 
 batch_size1 = 1
 from keras.models import Sequential
-from keras.layers import Flatten,Dense,Lambda
+from keras.layers.core import Flatten,Dense,Lambda,Activation
+from keras.layers.convolutional import Convolution2D,Conv2D
+from keras.layers.pooling import MaxPooling2D
 #from keras import losses
 rows,col,channels=160,320,3
 model = Sequential()
+#read a 320x160x3 image
 model.add(Lambda(lambda x: x/127.5 - 1.,input_shape=(rows,col,channels),output_shape=(rows,col,channels)))
 #model.add(Flatten(input_shape= (rows,col,channels)))
-#model.add()
+# Feature Map of shape 316x156x6
+model.add(Conv2D(6,5,1))
+# Feature Map of shape 316x156x6
+model.add(Activation('relu'))
+
+# Feature Map of shape 158x78x6
+#using keras 1 not keras 2, SO has to use border_mode instead of padding
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), border_mode="same"))
+# Feature Map of shape 79x39x16
+model.add(Conv2D(16,5,1))
+# Feature Map of shape 79x39x16
+model.add(Activation('relu'))
+# Feature Map of shape 39x19x16
+#using keras 1 not keras 2, SO has to use border_mode instead of padding
+model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), border_mode="same"))
+# Feature Map of shape 11856
+
 model.add(Flatten())
-model.add(Dense(50))
+model.add(Dense(120))
+model.add(Activation('relu'))
+model.add(Dense(84))
+model.add(Activation('relu'))
 model.add(Dense(1))
 #adam = ks.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 model.compile(loss='mse',optimizer='adam')
