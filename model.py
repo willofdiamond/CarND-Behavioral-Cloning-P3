@@ -22,6 +22,7 @@ train_lines = lines[:int(0.8*len(lines))]
 test_lines = lines[int(0.8*len(lines)):]
 
 def generateData(file_directory,train_lines,batch_size =1):
+    correction = 0.3
     while(1):
         np.random.shuffle(train_lines)
         for batch_itr in range(0,int(len(train_lines)/batch_size)):
@@ -35,27 +36,46 @@ def generateData(file_directory,train_lines,batch_size =1):
                 cur_itr_end = len(train_lines)
             for itr in range(cur_itr_start,cur_itr_end):
                 image = cv2.imread(file_directory+train_lines[itr][0])
+                image_left = cv2.imread(file_directory+"IMG/"+train_lines[itr][1].split('/')[-1])
+                image_right = cv2.imread(file_directory+"IMG/"+train_lines[itr][2].split('/')[-1])
+                #print(file_directory+"IMG/"+train_lines[itr][1].split('/')[-1])
                 steering=float(train_lines[itr][3])
+                steering_left = steering+correction
+                steering_right = steering-correction
                 image_flipped=np.fliplr(image)
+                '''
                 image_data.append(image)
                 #flipping the image to train car for right curve turns
                 image_data.append(image_flipped)
+                #Add left side image
+                image_data.append(image_left)
+                #Add right side image
+                image_data.append(image_right)
+                '''
+                image_data.extend([image,image_flipped,image_left,image_right])
                 steering_flipped=-1*steering
+                '''
                 steering_data.append(steering)
                 steering_data.append(steering_flipped)
+                steering_data.append(steering_left)
+                steering_data.append(steering_right)
+                '''
+                steering_data.extend([steering,steering_flipped,steering_left,steering_right])
+
                 yield (np.array(image_data),np.array(steering_data))
 
 
 batch_size1 = 1
 from keras.models import Sequential
 from keras.layers.core import Flatten,Dense,Lambda,Activation
-from keras.layers.convolutional import Convolution2D,Conv2D
+from keras.layers.convolutional import Convolution2D,Conv2D,Cropping2D
 from keras.layers.pooling import MaxPooling2D
 #from keras import losses
 rows,col,channels=160,320,3
 model = Sequential()
 #read a 320x160x3 image
 model.add(Lambda(lambda x: x/127.5 - 1.,input_shape=(rows,col,channels),output_shape=(rows,col,channels)))
+model.add(Cropping2D(cropping=((50,20), (0,0))))
 #model.add(Flatten(input_shape= (rows,col,channels)))
 # Feature Map of shape 316x156x6
 
@@ -82,7 +102,7 @@ model.add(Activation('relu'))
 model.add(Dense(1))
 #adam = ks.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 model.compile(loss='mse',optimizer='adam')
-model.fit_generator(generateData(file_directory,train_lines,batch_size = 1), int((len(train_lines))/batch_size1), 2,1,None,generateData(file_directory,test_lines,batch_size = 1),int((len(test_lines))/batch_size1) )
+model.fit_generator(generateData(file_directory,train_lines,batch_size = 1), int((4*len(train_lines))/batch_size1), 2,1,None,generateData(file_directory,test_lines,batch_size = 1),int((4*len(test_lines))/batch_size1) )
 
 model.save('model.h5')
 print('model saved')
