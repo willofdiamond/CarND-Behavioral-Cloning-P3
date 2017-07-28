@@ -35,8 +35,14 @@ def generateData(file_directory,train_lines,batch_size =1):
                 cur_itr_end = len(train_lines)
             for itr in range(cur_itr_start,cur_itr_end):
                 image = cv2.imread(file_directory+train_lines[itr][0])
+                steering=float(train_lines[itr][3])
+                image_flipped=np.fliplr(image)
                 image_data.append(image)
-                steering_data.append(float(train_lines[itr][3]))
+                #flipping the image to train car for right curve turns
+                image_data.append(image_flipped)
+                steering_flipped=-1*steering
+                steering_data.append(steering)
+                steering_data.append(steering_flipped)
                 yield (np.array(image_data),np.array(steering_data))
 
 
@@ -52,10 +58,10 @@ model = Sequential()
 model.add(Lambda(lambda x: x/127.5 - 1.,input_shape=(rows,col,channels),output_shape=(rows,col,channels)))
 #model.add(Flatten(input_shape= (rows,col,channels)))
 # Feature Map of shape 316x156x6
+
 model.add(Conv2D(6,5,1))
 # Feature Map of shape 316x156x6
 model.add(Activation('relu'))
-
 # Feature Map of shape 158x78x6
 #using keras 1 not keras 2, SO has to use border_mode instead of padding
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), border_mode="same"))
