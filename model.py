@@ -72,34 +72,57 @@ from keras.layers.convolutional import Convolution2D,Conv2D,Cropping2D
 from keras.layers.pooling import MaxPooling2D
 #from keras import losses
 rows,col,channels=160,320,3
+ # NVIDIA Architecture
 model = Sequential()
-#read a 320x160x3 image
-model.add(Lambda(lambda x: x/127.5 - 1.,input_shape=(rows,col,channels),output_shape=(rows,col,channels)))
-model.add(Cropping2D(cropping=((50,20), (0,0))))
-#model.add(Flatten(input_shape= (rows,col,channels)))
-# Feature Map of shape 316x156x6
+#read a  3@160x320 input planes
+#Crop the image to eliminate the other objects
+model.add(Cropping2D(cropping=((50,20), (0,0)),input_shape=(rows,col,channels)))
+# Feature Map of shape 3@90x320
+rows,col,channels=90,320,3
+# Normalize the data
+model.add(Lambda(lambda x: x/127.5 - 1.,output_shape=(rows,col,channels)))
 
-model.add(Conv2D(6,5,1))
-# Feature Map of shape 316x156x6
+# Convolution layer 1
+model.add(Conv2D(24,5,2))
+# Feature map 24@43x158
 model.add(Activation('relu'))
-# Feature Map of shape 158x78x6
-#using keras 1 not keras 2, SO has to use border_mode instead of padding
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), border_mode="same"))
-# Feature Map of shape 79x39x16
-model.add(Conv2D(16,5,1))
-# Feature Map of shape 79x39x16
+# Feature map 24@43x158
+# Convolution layer 2
+model.add(Conv2D(36,5,2))
+# Feature Map of shape 36@20x77
 model.add(Activation('relu'))
-# Feature Map of shape 39x19x16
-#using keras 1 not keras 2, SO has to use border_mode instead of padding
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), border_mode="same"))
-# Feature Map of shape 11856
-
+# Feature Map of shape 36@20x77
+# Convolution layer 3
+model.add(Conv2D(48,5,2))
+# Feature Map of shape 48@8x37
+model.add(Activation('relu'))
+# Feature Map of shape 48@8x37
+# Convolution layer 4
+model.add(Conv2D(64,3,1))
+# Feature Map of shape 64@6x35
+model.add(Activation('relu'))
+# Feature Map of shape 64@6x35
+# Convolution layer 5
+model.add(Conv2D(64,3,1))
+# Feature Map of shape 64@4x33
+model.add(Activation('relu'))
+# Feature Map of shape 64@4x33
+# Flatten the planes
 model.add(Flatten())
-model.add(Dense(120))
+# Feature Map of shape 8448
+model.add(Dense(100))
+# Feature Map of shape 100
 model.add(Activation('relu'))
-model.add(Dense(84))
+model.add(Dense(50))
+# Feature Map of shape 50
+model.add(Activation('relu'))
+model.add(Dense(10))
+# Feature Map of shape 10
 model.add(Activation('relu'))
 model.add(Dense(1))
+
+
+#optimizing the loss functon
 #adam = ks.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 model.compile(loss='mse',optimizer='adam')
 model.fit_generator(generateData(file_directory,train_lines,batch_size = 1), int((4*len(train_lines))/batch_size1), 2,1,None,generateData(file_directory,test_lines,batch_size = 1),int((4*len(test_lines))/batch_size1) )
